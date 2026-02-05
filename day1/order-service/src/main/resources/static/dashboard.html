@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Service Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .status-up {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-down {
+            background: #ef4444;
+            color: white;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-title {
+            font-size: 0.9em;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .card-subtitle {
+            font-size: 0.85em;
+            color: #9ca3af;
+        }
+
+        .info-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .info-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5568d3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+        .metric-card {
+            position: relative;
+        }
+
+        .metric-icon {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            font-size: 2em;
+            opacity: 0.1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🚀 Order Service Dashboard</h1>
+                <p style="color: #6b7280; margin-top: 10px;">Real-time monitoring and metrics</p>
+            </div>
+            <div>
+                <span id="statusBadge" class="status-badge status-up">● UP</span>
+                <button class="refresh-btn" onclick="loadDashboard()" style="margin-left: 15px;">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <div class="dashboard-grid" id="metricsGrid">
+            <div class="loading">Loading metrics...</div>
+        </div>
+
+        <div class="info-card">
+            <h2>📊 Service Information</h2>
+            <div class="info-grid" id="infoGrid">
+                <div class="loading">Loading information...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboard() {
+            try {
+                // Load metrics
+                const metricsResponse = await fetch('/api/dashboard/metrics');
+                const metrics = await metricsResponse.json();
+
+                // Load service info
+                const infoResponse = await fetch('/api/dashboard/info');
+                const info = await infoResponse.json();
+
+                // Load health status
+                const healthResponse = await fetch('/health');
+                const health = await healthResponse.json();
+
+                // Update status badge
+                const statusBadge = document.getElementById('statusBadge');
+                if (health.status === 'UP') {
+                    statusBadge.className = 'status-badge status-up';
+                    statusBadge.textContent = '● UP';
+                } else {
+                    statusBadge.className = 'status-badge status-down';
+                    statusBadge.textContent = '● DOWN';
+                }
+
+                // Render metrics
+                renderMetrics(metrics);
+                
+                // Render info
+                renderInfo(info);
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('metricsGrid').innerHTML = 
+                    '<div class="card"><div class="card-title">Error</div><div class="card-value">Failed to load data</div></div>';
+            }
+        }
+
+        function renderMetrics(metrics) {
+            const metricsGrid = document.getElementById('metricsGrid');
+            metricsGrid.innerHTML = `
+                <div class="card metric-card">
+                    <div class="metric-icon">📈</div>
+                    <div class="card-title">Uptime</div>
+                    <div class="card-value">${metrics.uptime}</div>
+                    <div class="card-subtitle">Service availability</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-icon">🔢</div>
+                    <div class="card-title">Total Requests</div>
+                    <div class="card-value">${metrics.requests}</div>
+                    <div class="card-subtitle">Requests processed</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-icon">⚡</div>
+                    <div class="card-title">Response Time</div>
+                    <div class="card-value">${metrics.responseTime}</div>
+                    <div class="card-subtitle">Average response time</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-icon">❌</div>
+                    <div class="card-title">Error Rate</div>
+                    <div class="card-value">${metrics.errorRate}</div>
+                    <div class="card-subtitle">Error percentage</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-icon">🔌</div>
+                    <div class="card-title">Active Connections</div>
+                    <div class="card-value">${metrics.activeConnections}</div>
+                    <div class="card-subtitle">Current connections</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-icon">💾</div>
+                    <div class="card-title">Memory Usage</div>
+                    <div class="card-value">${metrics.memoryUsage}</div>
+                    <div class="card-subtitle">Memory consumption</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-icon">🖥️</div>
+                    <div class="card-title">CPU Usage</div>
+                    <div class="card-value">${metrics.cpuUsage}</div>
+                    <div class="card-subtitle">CPU consumption</div>
+                </div>
+            `;
+        }
+
+        function renderInfo(info) {
+            const infoGrid = document.getElementById('infoGrid');
+            infoGrid.innerHTML = `
+                <div class="info-item">
+                    <div class="info-label">Service Name</div>
+                    <div class="info-value">${info.serviceName}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Version</div>
+                    <div class="info-value">${info.version}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Environment</div>
+                    <div class="info-value">${info.environment}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Java Version</div>
+                    <div class="info-value">${info.javaVersion}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Spring Boot Version</div>
+                    <div class="info-value">${info.springBootVersion}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Server Port</div>
+                    <div class="info-value">${info.serverPort}</div>
+                </div>
+            `;
+        }
+
+        // Load dashboard on page load
+        loadDashboard();
+
+        // Auto-refresh every 5 seconds
+        setInterval(loadDashboard, 5000);
+    </script>
+</body>
+</html>
+
