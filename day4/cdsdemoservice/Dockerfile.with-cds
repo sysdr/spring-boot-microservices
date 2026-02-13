@@ -1,0 +1,17 @@
+# Stage 1: Build and generate CDS archive
+FROM eclipse-temurin:17-jdk-alpine AS builder
+WORKDIR /app
+COPY target/cdsdemoservice-3.2.5.jar app.jar
+
+# Generate class list by running the app once
+RUN apk add --no-cache curl bash &&     java -XX:DumpLoadedClassList=classes.lst -jar app.jar > /dev/null 2>&1 &     APP_PID=$$! &&     timeout 30 bash -c 'until curl -s http://localhost:8080/hello > /dev/null 2>&1; do sleep 1; done' || true &&     kill $$APP_PID 2>/dev/null || true &&     wait $$APP_PID 2>/dev/null || true &&     sleep 2
+# Dump CDS archive
+RUN java -Xshare:dump -XX:SharedArchiveFile=app.jsa -XX:SharedClassListFile=classes.lst -jar app.jar
+
+# Stage 2: Run with JRE and CDS archive
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/app.jar app.jar
+COPY --from=builder /app/app.jsa app.jsa
+EXPOSE 8080
+CMD ["java", "-XX:SharedArchiveFile=app.jsa", "-jar", "app.jar"]
