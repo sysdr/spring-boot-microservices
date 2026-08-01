@@ -1,6 +1,5 @@
-## **The Architect’s Blueprint: Building Hyperscale Microservices with Spring Boot and Java **
+## **The Architect’s Blueprint: Building Hyperscale Microservices with Spring Boot and Java**
 
-[Course Curriculum](https://systemdrd.com/courses/spring-boot-microservices-system-design/).
 
 The transition from a monolithic architecture to a distributed ecosystem is often characterized as a journey from simplicity to complexity. However, for systems handling 100 million requests per second, this complexity is not merely an architectural choice but a survival requirement. The modern engineer must move beyond basic REST controllers and simple database interactions to master the orchestration of hundreds of services, the nuances of distributed data consistency, and the performance characteristics of the underlying virtual machine. This report serves as the foundational curriculum for a premium, 90-day intensive course designed to bridge the gap between building a Minimum Viable Product (MVP) and architecting a production-ready, hyperscale platform.
 
